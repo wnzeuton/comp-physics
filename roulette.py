@@ -99,12 +99,35 @@ for i in range(1, 100001):
     pop_curve.plot(i, X[i])
     pop_dots.plot(i, X[i])
     
-
-=======
 # Spin animation
 t = 0
 while True:
     rate(30)
     t += 0.05
     wheel.rotate(angle=0.03, axis=vec(0, 1, 0), origin=vec(0, 0, 0))
->>>>>>> 89984a0a7d9fe6481b4681fdc2f2d4b33b160139
+
+def logistic(X):
+    return 4*X*(1-X)
+
+def rng():
+    logistic()
+
+r = 4
+seed = 0.5
+
+X =[]
+X[0] = seed
+
+time_series_plot = graph()
+pop_curve = gcurve(graph=time_series_plot)
+pop_dots = gdots(graph=time_series_plot)
+
+pop_curve.plot(0, seed)
+pop_dots.plot(0, seed)
+
+for i in range(1, 100001):
+    X[i] = logistic(r, X[i-1])
+    
+    pop_curve.plot(i, X[i])
+    pop_dots.plot(i, X[i])
+    
