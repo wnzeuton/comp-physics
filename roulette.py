@@ -9,6 +9,7 @@ nums = [0, 28, 9, 26, 30, 11, 7, 20, 32, 17, 5, 22, 34, 15, 3, 24, 36, 13, 1, 00
         27, 10, 25, 29, 12, 8, 19, 31, 18, 6, 21, 33, 16, 4, 23, 35, 14, 2]
 
 # Base
+
 cylinder(pos=vec(0, -0.6, 0), axis=vec(0, 0.2, 0), radius=6, color=vec(0.4, 0.4, 0.4))
 ring(pos=vec(0, 0, 0), axis=vec(0, 1, 0), radius=5, thickness=0.1, color=color.black)
 cone(pos=vec(0, 0, 0), axis=vec(0, 0.7, 0), radius=2.5, color=color.black)
@@ -73,20 +74,40 @@ wheel = compound(pockets + labels + bars)
 #    t += 0.05
 #    wheel.rotate(angle=0.03, axis=vec(0, 1, 0), origin=vec(0, 0, 0))
 
+dt = 0.01
+def spin():
+    for t in range(0, 1, dt):
+        rate(1/dt)
+        t += dt
+        print(t)
+        wheel.rotate(angle=0.03, axis=vec(0, 1, 0), origin=vec(0, 0, 0))
+        
+spin()
+
 def logistic(r, X):
     return r*X*(1-X)
     
-seed = 0.8
+seed = 0.84
 r = 4
+
+lower_bound = 0.3
+upper_bound = 0.7
 
 X =[]
 X[0] = seed
 
 def rng():
-    X.append(logistic(r, X[-1]))
-    print(X[-1])
+    res = seed
+    while(res == seed or lower_bound < 0.3 or upper_bound > 0.7):
+        X.append(logistic(r, X[-1]))
+        res = X[-1]
+    
+    n = (upper_bound - lower_bound ) / 38
+    interval = (res - lower_bound) / n
+    print( interval  - interval  % 1 )
 
-for i in range(10):
-    rng()
+rng()
 
-print(X)
+#print(X)
+    
+
