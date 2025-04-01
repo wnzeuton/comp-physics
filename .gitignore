@@ -1,0 +1,39 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+.eggs/
+dist/
+build/
+sdist/
+*.egg-info/
+*.wheel
+tmp/
+tmp*
+MANIFEST
+
+# Environments
+.env
+venv
+env
+ENV
+*.log
+
+# PyInstaller
+#  Often these end up as part of a cached dependency so including them here is fine
+#  makes it easier to have a clear environment
+__pycache__
+*.spec
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Sourcery cache files
+.sourcery/
