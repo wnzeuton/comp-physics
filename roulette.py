@@ -76,11 +76,12 @@ wheel = compound(pockets + labels + bars)
 
 dt = 0.01
 def spin():
-    for t in range(0, 1, dt):
+    t = 0
+    while t < 1:
         rate(1/dt)
         t += dt
-        print(t)
         wheel.rotate(angle=0.03, axis=vec(0, 1, 0), origin=vec(0, 0, 0))
+
         
 spin()
 
@@ -93,8 +94,8 @@ r = 4
 lower_bound = 0.3
 upper_bound = 0.7
 
-X =[]
-X[0] = seed
+X = [seed]
+
 
 def rng():
     res = seed
