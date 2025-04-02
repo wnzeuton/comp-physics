@@ -1,7 +1,8 @@
 from vpython import *
 
+
 scene.background = vec(0.2, 0.2, 0.2)
-scene.forward = vec(0, -1, 0.2)  # bird's eye view
+scene.forward = vec(0, -1, 0.2) # bird's eye view
 scene.up = vec(0, 0, 1)
 
 # Number order
@@ -77,12 +78,23 @@ wheel = compound(pockets + labels + bars)
 dt = 0.01
 def spin():
     t = 0
+    cam_radius = 10
+    cam_height = 3
+    wheel_angle = 0
     while t < 1:
         rate(1/dt)
         t += dt
         wheel.rotate(angle=0.03, axis=vec(0, 1, 0), origin=vec(0, 0, 0))
-
         
+         # cool camera spinny
+        angle = -t * 2 * pi  # clockwise
+        cam_x = cam_radius * cos(angle)
+        cam_z = cam_radius * sin(angle)
+        cam_y = cam_height
+
+        scene.center = vec(0, 0, 0)
+        scene.forward = norm(vec(0, 0, 0) - vec(cam_x, cam_y, cam_z))
+        scene.up = vec(0, 1, 0)  # keep upright
 spin()
 
 def logistic(r, X):
