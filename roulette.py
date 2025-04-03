@@ -1,7 +1,7 @@
-from vpython import *
+Web VPython 3.2
 
 
-scene.background = vec(0.2, 0.2, 0.2)
+scene.background = vec(0.3, 0.02, 0.02)
 scene.forward = vec(0, -1, 0.2) # bird's eye view
 scene.up = vec(0, 0, 1)
 
@@ -42,18 +42,33 @@ for i in range(38):
     else:
         col = vec(0.1, 0.1, 0.1)
 
-    label = box(pos=vec(4.8 * cos(mid), 0.01, 4.8 * sin(mid)),
-                size=vec(0.6, 0.02, 0.4),
-                color=col)
+    label = box(
+    pos=vec(4.8 * cos(mid), 0.01, 4.8 * sin(mid)),
+    size=vec(0.6, 0.02, 0.4),
+    color=col
+)
     label.axis = vec(cos(mid), 0, sin(mid))
     label.up = vec(0, 1, 0)
     labels.append(label)
 
-    # Text (flat)
-    t = text(text=str(n), height=0.3, depth=0.02, color=color.white,
-             align='center', pos=label.pos + vec(0, 0.01, 0))
-    t.rotate(angle=pi/2, axis=vec(1, 0, 0))       
-    t.rotate(angle=mid + pi, axis=vec(0, 1, 0))  
+    t = text(
+    text=str(n),
+    height=0.3,
+    depth=0.02,
+    color=color.white,
+    align='center',
+    pos=label.pos + vec(0, 0.01, 0)
+)
+    t.rotate(angle=pi/2, axis=vec(1, 0, 0))
+    t.rotate(angle=mid + pi, axis=vec(0, 1, 0))
+    labels.append(t)
+
+    # Flatten the text onto the surface
+    t.rotate(angle=pi/2, axis=vec(1, 0, 0))  # lays flat
+
+    # Face it outward correctly
+    t.rotate(angle=mid, axis=vec(0, 1, 0))   # faces the outer ring
+
     labels.append(t)
 
 # Dividers
@@ -67,6 +82,51 @@ for i in range(38):
 
 # Wheel
 wheel = compound(pockets + labels + bars)
+
+# Casino ground (green felt table)
+green_felt = cylinder(
+    pos=vec(0, -0.601, 0),
+    axis=vec(0, 0.01, 0),
+    radius=30,
+    color=vec(0, 0.3, 0)
+)
+
+
+# Warm overhead glow for atmosphere
+light_main = sphere(pos=vec(0, 6, 0), radius=0.4, color=vec(1, 0.75, 0.3), emissive=True)
+light_side1 = sphere(pos=vec(3, 5.5, 3), radius=0.25, color=vec(1, 0.6, 0.2), emissive=True)
+light_side2 = sphere(pos=vec(-3, 5.5, -3), radius=0.25, color=vec(1, 0.6, 0.2), emissive=True)
+
+shadow_ring = ring(
+    pos=vec(0, -0.599, 0),
+    axis=vec(0, 1, 0),
+    radius=5.3,
+    thickness=0.4,
+    color=vec(0.05, 0.05, 0.05),
+    opacity=0.15
+)
+
+
+
+
+casino_wall = cylinder(
+    pos=vec(0, -5, 0),
+    axis=vec(0, 10, 0),
+    radius=30,
+    color=vec(0.4, 0.05, 0.05),
+    opacity=1
+)
+
+casino_ceiling = box(
+    pos=vec(0, 5, 0),
+    size=vec(60, 0.2, 60),
+    color=vec(0.2, 0.02, 0.02)
+)
+
+
+
+
+
     
 # Spin animation
 #t = 0
@@ -78,28 +138,46 @@ wheel = compound(pockets + labels + bars)
 dt = 0.01
 def spin():
     t = 0
-    cam_radius = 10
-    cam_height = 3
-    wheel_angle = 0
-    while t < 1:
+    total_time = 10
+    spin_speed = 0.015
+
+    initial_radius = 18
+    final_radius = 5
+    cam_height = 2.5
+
+    orbit_speed = pi / 6
+    scene.range = 6
+
+    while t < total_time:
         rate(1/dt)
         t += dt
-        wheel.rotate(angle=0.03, axis=vec(0, 1, 0), origin=vec(0, 0, 0))
-        
-         # cool camera spinny
-        angle = -t * 2 * pi  # clockwise
-        cam_x = cam_radius * cos(angle)
-        cam_z = cam_radius * sin(angle)
+
+        wheel.rotate(angle=spin_speed, axis=vec(0, 1, 0), origin=vec(0, 0, 0))
+
+        progress = (t / total_time) ** 1.8
+
+        radius = initial_radius - (initial_radius - final_radius) * progress
+
+        angle = progress * orbit_speed * total_time
+        cam_x = radius * cos(angle)
+        cam_z = radius * sin(angle)
         cam_y = cam_height
 
         scene.center = vec(0, 0, 0)
         scene.forward = norm(vec(0, 0, 0) - vec(cam_x, cam_y, cam_z))
-        scene.up = vec(0, 1, 0)  # keep upright
-spin()
+        scene.up = vec(0, 1, 0)
 
+
+
+
+
+
+        
+
+spin()
 def logistic(r, X):
-    return r*X*(1-X)
-    
+    return r * X * (1 - X)
+
 seed = 0.84
 r = 4
 
@@ -107,7 +185,6 @@ lower_bound = 0.3
 upper_bound = 0.7
 
 X = [seed]
-
 
 def rng():
     res = seed
@@ -118,6 +195,13 @@ def rng():
     n = (upper_bound - lower_bound ) / 38
     interval = (res - lower_bound) / n
     print( interval  - interval  % 1 )
+
+
+
+
+
+
+
 
 rng()
 
