@@ -1,6 +1,5 @@
 from vpython import *
 
-
 scene.background = vec(0.2, 0.2, 0.2)
 scene.forward = vec(0, -1, 0.2) # bird's eye view
 scene.up = vec(0, 0, 1)
@@ -100,8 +99,8 @@ spin()
 def logistic(r, X):
     return r*X*(1-X)
     
-seed = 0.84
-r = 4
+seed = 0.4
+r = 3.9
 
 lower_bound = 0.3
 upper_bound = 0.7
@@ -109,18 +108,25 @@ upper_bound = 0.7
 X = [seed]
 
 
-def rng():
-    res = seed
-    while(res == seed or lower_bound < 0.3 or upper_bound > 0.7):
-        X.append(logistic(r, X[-1]))
-        res = X[-1]
-    
-    n = (upper_bound - lower_bound ) / 38
-    interval = (res - lower_bound) / n
-    print( interval  - interval  % 1 )
+def rng(n):
+    global nums
+    for i in range(n):
+        #print("roll " + str(i))
+        res = logistic(r, X[-1])
+        while(res < lower_bound or res > upper_bound):
+            print(res)
+            X.append(logistic(r, X[-1]))
+            res = X[-1]
+            
+        n = (upper_bound - lower_bound ) / 37
+        interval = (res - lower_bound) / n
+        #print(interval - (interval % 1))
+        interval = int(interval  - (interval  % 1 ) - 1)
+        #print(nums[0])
+        #print(interval)
+        print(nums[interval])
+        #print(nums[interval  - (interval  % 1 ) - 1])
 
-rng()
+rng(10000)
 
 #print(X)
-    
-
