@@ -5,6 +5,43 @@ scene.background = vec(0.3, 0.02, 0.02)
 scene.forward = vec(0, -1, 0.2) # bird's eye view
 scene.up = vec(0, 0, 1)
 
+
+
+
+# randomization
+def logistic(r, X):
+    return r * X * (1 - X)
+
+seed = 0.71
+r = 4
+
+lower_bound = 0.3
+upper_bound = 0.7
+
+X = [seed]
+
+def rng():
+    res = seed
+    while(res == seed or lower_bound < 0.3 or upper_bound > 0.7):
+        X.append(logistic(r, X[-1]))
+        res = X[-1]
+    
+    n = (upper_bound - lower_bound ) / 38
+    interval = (res - lower_bound) / n
+    print( interval  - interval  % 1 )
+
+
+
+
+
+
+
+for _ in range(0,10):
+    rng()
+
+
+
+
 # Number order
 nums = [0, 28, 9, 26, 30, 11, 7, 20, 32, 17, 5, 22, 34, 15, 3, 24, 36, 13, 1, 00, 
         27, 10, 25, 29, 12, 8, 19, 31, 18, 6, 21, 33, 16, 4, 23, 35, 14, 2]
@@ -92,8 +129,8 @@ green_felt = cylinder(
 )
 
 
-# Warm overhead glow for atmosphere
-light_main = sphere(pos=vec(0, 6, 0), radius=0.4, color=vec(1, 0.75, 0.3), emissive=True)
+# lighting
+light_main = sphere(pos=vec(0, 5.5, 0), radius=0.6, color=vec(1, 0.8, 0.4), emissive=True)
 light_side1 = sphere(pos=vec(3, 5.5, 3), radius=0.25, color=vec(1, 0.6, 0.2), emissive=True)
 light_side2 = sphere(pos=vec(-3, 5.5, -3), radius=0.25, color=vec(1, 0.6, 0.2), emissive=True)
 
@@ -138,7 +175,7 @@ casino_ceiling = box(
 dt = 0.01
 def spin():
     t = 0
-    total_time = 10
+    total_time = 5
     spin_speed = 0.015
 
     initial_radius = 18
@@ -175,35 +212,7 @@ def spin():
         
 
 spin()
-def logistic(r, X):
-    return r * X * (1 - X)
 
-seed = 0.84
-r = 4
-
-lower_bound = 0.3
-upper_bound = 0.7
-
-X = [seed]
-
-def rng():
-    res = seed
-    while(res == seed or lower_bound < 0.3 or upper_bound > 0.7):
-        X.append(logistic(r, X[-1]))
-        res = X[-1]
-    
-    n = (upper_bound - lower_bound ) / 38
-    interval = (res - lower_bound) / n
-    print( interval  - interval  % 1 )
-
-
-
-
-
-
-
-
-rng()
 
 #print(X)
     
