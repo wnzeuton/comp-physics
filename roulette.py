@@ -1,4 +1,4 @@
-Web VPython 3.2
+from vpython import *
 
 
 scene.background = vec(0.3, 0.02, 0.02)
@@ -215,7 +215,37 @@ def spin():
 
 spin()
 
+def logistic(r, X):
+    return r*X*(1-X)
+    
+seed = 0.4
+r = 3.9
+
+lower_bound = 0.3
+upper_bound = 0.7
+
+X = [seed]
+
+
+def rng(n):
+    global nums
+    for i in range(n):
+        #print("roll " + str(i))
+        res = logistic(r, X[-1])
+        while(res < lower_bound or res > upper_bound):
+            print(res)
+            X.append(logistic(r, X[-1]))
+            res = X[-1]
+            
+        n = (upper_bound - lower_bound ) / 37
+        interval = (res - lower_bound) / n
+        #print(interval - (interval % 1))
+        interval = int(interval  - (interval  % 1 ) - 1)
+        #print(nums[0])
+        #print(interval)
+        print(nums[interval])
+        #print(nums[interval  - (interval  % 1 ) - 1])
+
+rng(10000)
 
 #print(X)
-    
-
