@@ -36,8 +36,6 @@ def rng():
 
 
 
-for _ in range(0,10):
-    rng()
 
 
 
@@ -94,17 +92,21 @@ for i in range(38):
     depth=0.02,
     color=color.white,
     align='center',
-    pos=label.pos + vec(0, 0.01, 0)
+    pos=label.pos + vec(0, 0.02, 0),
+    axis=vec(0, 1, 0),                      
+    up=vec(cos(mid), 0, sin(mid))           
 )
-    t.rotate(angle=pi/2, axis=vec(1, 0, 0))
-    t.rotate(angle=mid + pi, axis=vec(0, 1, 0))
+
+
+
+
+
+
     labels.append(t)
 
-    # Flatten the text onto the surface
-    t.rotate(angle=pi/2, axis=vec(1, 0, 0))  # lays flat
 
     # Face it outward correctly
-    t.rotate(angle=mid, axis=vec(0, 1, 0))   # faces the outer ring
+# faces the outer ring
 
     labels.append(t)
 
