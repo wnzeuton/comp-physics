@@ -5,41 +5,6 @@ scene.background = vec(0.3, 0.02, 0.02)
 scene.forward = vec(0, -1, 0.2) # bird's eye view
 scene.up = vec(0, 0, 1)
 
-
-
-
-# randomization
-def logistic(r, X):
-    return r * X * (1 - X)
-
-seed = 0.71
-r = 4
-
-lower_bound = 0.3
-upper_bound = 0.7
-
-X = [seed]
-
-def rng():
-    res = seed
-    while(res == seed or lower_bound < 0.3 or upper_bound > 0.7):
-        X.append(logistic(r, X[-1]))
-        res = X[-1]
-    
-    n = (upper_bound - lower_bound ) / 38
-    interval = (res - lower_bound) / n
-    print( interval  - interval  % 1 )
-
-
-
-
-
-
-
-
-
-
-
 # Number order
 nums = [0, 28, 9, 26, 30, 11, 7, 20, 32, 17, 5, 22, 34, 15, 3, 24, 36, 13, 1, 00, 
         27, 10, 25, 29, 12, 8, 19, 31, 18, 6, 21, 33, 16, 4, 23, 35, 14, 2]
@@ -163,8 +128,39 @@ casino_ceiling = box(
 )
 
 
+def logistic(r, X):
+    return r*X*(1-X)
+    
+seed = 0.4
+r = 3.9
+
+lower_bound = 0.3
+upper_bound = 0.7
+
+X = [seed]
 
 
+def rng():
+    global nums
+
+    #print("roll " + str(i))
+    res = logistic(r, X[-1])
+    while(res < lower_bound or res > upper_bound):
+        #print(res)
+        X.append(logistic(r, X[-1]))
+        res = X[-1]
+        
+    n = (upper_bound - lower_bound ) / 37
+    interval = (res - lower_bound) / n
+    #print(interval - (interval % 1))
+    interval = int(interval  - (interval  % 1 ) - 1)
+    #print(nums[0])
+    #print(interval)
+    print(nums[interval])
+    #print(nums[interval  - (interval  % 1 ) - 1])
+
+for i in range(50):
+    rng()
 
     
 # Spin animation
@@ -213,39 +209,7 @@ def spin():
 
         
 
-spin()
+#spin()
 
-def logistic(r, X):
-    return r*X*(1-X)
-    
-seed = 0.4
-r = 3.9
-
-lower_bound = 0.3
-upper_bound = 0.7
-
-X = [seed]
-
-
-def rng(n):
-    global nums
-    for i in range(n):
-        #print("roll " + str(i))
-        res = logistic(r, X[-1])
-        while(res < lower_bound or res > upper_bound):
-            print(res)
-            X.append(logistic(r, X[-1]))
-            res = X[-1]
-            
-        n = (upper_bound - lower_bound ) / 37
-        interval = (res - lower_bound) / n
-        #print(interval - (interval % 1))
-        interval = int(interval  - (interval  % 1 ) - 1)
-        #print(nums[0])
-        #print(interval)
-        print(nums[interval])
-        #print(nums[interval  - (interval  % 1 ) - 1])
-
-rng(10000)
 
 #print(X)
