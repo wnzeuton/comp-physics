@@ -1,11 +1,9 @@
-from vpython import *
+Web VPython 3.2
 
 
 scene.background = vec(0.3, 0.02, 0.02)
 scene.forward = vec(0, -1, 0.2) # bird's eye view
 scene.up = vec(0, 0, 1)
-
-
 
 
 # randomization
@@ -21,6 +19,7 @@ upper_bound = 0.7
 X = [seed]
 
 def rng():
+    global interval
     res = seed
     while(res == seed or lower_bound < 0.3 or upper_bound > 0.7):
         X.append(logistic(r, X[-1]))
@@ -29,16 +28,7 @@ def rng():
     n = (upper_bound - lower_bound ) / 38
     interval = (res - lower_bound) / n
     print( interval  - interval  % 1 )
-
-
-
-
-
-
-
-
-
-
+    return int(interval - interval % 1)
 
 # Number order
 nums = [0, 28, 9, 26, 30, 11, 7, 20, 32, 17, 5, 22, 34, 15, 3, 24, 36, 13, 1, 00, 
@@ -85,6 +75,17 @@ for i in range(38):
     label.axis = vec(cos(mid), 0, sin(mid))
     label.up = vec(0, 1, 0)
     labels.append(label)
+    
+    bowl = box(
+    pos=vec(5.75*cos(mid),.25,5.75*sin(mid)), size = vec(.25,1.1,1.5),
+    axis= -vec(8*cos(mid),-15,8*sin(mid)),
+    up=vec(label.pos.z,0,-label.pos.x),
+    color=vec(80/255,49/255,29/255))
+    
+    labels.append(bowl)
+
+#text labels
+
 
     t = text(
     text=str(n),
@@ -92,35 +93,46 @@ for i in range(38):
     depth=0.02,
     color=color.white,
     align='center',
-    pos=label.pos + vec(0, 0.02, 0),
+    pos=label.pos + vec(0, 0.012, 0),
     axis=vec(0, 1, 0),                      
-    up=vec(cos(mid), 0, sin(mid))           
+    up=(-(label.pos + vec(0,0.01,0))),
+    axis=vector(label.pos.z,0,-label.pos.x)
 )
 
 
-
-
-
-
     labels.append(t)
 
-
-    # Face it outward correctly
-# faces the outer ring
-
-    labels.append(t)
 
 # Dividers
 bars = []
 for i in range(38):
-    a = i * (2 * pi / 38)
-    x = 5 * cos(a)
-    z = 5 * sin(a)
-    bar = box(pos=vec(x, 0.2, z), size=vec(0.02, 0.3, 0.1), axis=vec(x, 0, z), color=color.white)
+    a = i * (2 * pi / 38)  # edge of pocket
+    inner_r = 4.3
+    outer_r = 4.8
+
+    start = vec(inner_r * cos(a), 0.2, inner_r * sin(a))
+    end = vec(outer_r * cos(a), 0.2, outer_r * sin(a))
+    direction = norm(end - start)
+
+    mid = (start + end) / 2
+    length = mag(end - start)
+
+    bar = box(
+    pos=vec(mid.x, 0.01, mid.z),           # low on the wheel
+    axis=direction,
+    size=vec(length, 0.1, 0.14),          # short and flat
+    color=color.white
+)
+
     bars.append(bar)
+
+
 
 # Wheel
 wheel = compound(pockets + labels + bars)
+
+
+
 
 # Casino ground (green felt table)
 green_felt = cylinder(
@@ -129,6 +141,21 @@ green_felt = cylinder(
     radius=30,
     color=vec(0, 0.3, 0)
 )
+
+#bol
+ball = sphere(
+    pos=vec(4.3, 0.05, 0),  # near rim
+    radius=0.1,
+    color=color.white,
+    make_trail=True,
+    retain=2
+)
+
+
+#bowl
+
+
+    
 
 
 # lighting
@@ -175,77 +202,72 @@ casino_ceiling = box(
 #    wheel.rotate(angle=0.03, axis=vec(0, 1, 0), origin=vec(0, 0, 0))
 
 dt = 0.01
+
+def smoothstep(x):
+    return x * x * (3 - 2 * x)
+
 def spin():
     t = 0
-    total_time = 5
+    total_time = 6
     spin_speed = 0.015
 
-    initial_radius = 18
-    final_radius = 5
-    cam_height = 2.5
+    ball_angle = 0
+    ball_speed = 0.12
+    ball_radius = 4.3
+    ball_y = 0.05
 
-    orbit_speed = pi / 6
+    result_index = int(random() * 38)
+    result_angle = result_index * (2 * pi / 38) + (pi / 38)
+    print("Winning index:", result_index, "| Number:", nums[result_index], "| Angle:", result_angle)
+
+    total_spin_angle = 0
+    lock_start_angle = None
+
+    # Fixed camera for testing
+    cam_distance = 13
+    cam_height = 3
+    cam_angle = pi / 4
+    cam_x = cam_distance * cos(cam_angle)
+    cam_z = cam_distance * sin(cam_angle)
+    scene.center = vec(0, 0, 0)
+    scene.forward = norm(vec(0, 0, 0) - vec(cam_x, cam_height, cam_z))
+    scene.up = vec(0, 1, 0)
     scene.range = 6
 
     while t < total_time:
-        rate(1/dt)
+        rate(1 / dt)
         t += dt
+        progress = min(1, t / total_time)
 
-        wheel.rotate(angle=spin_speed, axis=vec(0, 1, 0), origin=vec(0, 0, 0))
+        ease_start = 0.8
+        ease_factor = (progress - ease_start) / (1 - ease_start)
+        ease = smoothstep(ease_factor) if progress > ease_start else 0
 
-        progress = (t / total_time) ** 1.8
+        # Rotate wheel
+        spin_angle = spin_speed
+        total_spin_angle += spin_angle
+        wheel.rotate(angle=spin_angle, axis=vec(0, 1, 0), origin=vec(0, 0, 0))
 
-        radius = initial_radius - (initial_radius - final_radius) * progress
+        # Ball spin
+        if ease == 0:
+            ball_speed *= 0.992
+            ball_angle += ball_speed
+        else:
+            if lock_start_angle is None:
+                lock_start_angle = ball_angle
+            ball_angle = (1 - ease) * lock_start_angle + ease * (result_angle)
 
-        angle = progress * orbit_speed * total_time
-        cam_x = radius * cos(angle)
-        cam_z = radius * sin(angle)
-        cam_y = cam_height
-
-        scene.center = vec(0, 0, 0)
-        scene.forward = norm(vec(0, 0, 0) - vec(cam_x, cam_y, cam_z))
-        scene.up = vec(0, 1, 0)
-
-
-
-
-
-
+        ball.pos = vec(ball_radius * cos(ball_angle), ball_y, ball_radius * sin(ball_angle))
         
+        # Lock final
+    wheel.rotate(angle=-total_spin_angle, axis=vec(0, 1, 0), origin=vec(0, 0, 0))
+    ball.pos = vec(ball_radius * cos(-result_angle), ball_y, ball_radius * sin(-result_angle))
+
+    print("Ball landed cleanly in:", nums[result_index])
 
 spin()
 
-def logistic(r, X):
-    return r*X*(1-X)
-    
-seed = 0.4
-r = 3.9
-
-lower_bound = 0.3
-upper_bound = 0.7
-
-X = [seed]
-
-
-def rng(n):
-    global nums
-    for i in range(n):
-        #print("roll " + str(i))
-        res = logistic(r, X[-1])
-        while(res < lower_bound or res > upper_bound):
-            print(res)
-            X.append(logistic(r, X[-1]))
-            res = X[-1]
-            
-        n = (upper_bound - lower_bound ) / 37
-        interval = (res - lower_bound) / n
-        #print(interval - (interval % 1))
-        interval = int(interval  - (interval  % 1 ) - 1)
-        #print(nums[0])
-        #print(interval)
-        print(nums[interval])
-        #print(nums[interval  - (interval  % 1 ) - 1])
-
-rng(10000)
 
 #print(X)
+    
+
