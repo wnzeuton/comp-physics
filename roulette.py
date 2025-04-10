@@ -1,5 +1,6 @@
 from vpython import *
 
+import random
 
 scene.background = vec(0.3, 0.02, 0.02)
 scene.forward = vec(0, -1, 0.2) # bird's eye view
@@ -131,44 +132,90 @@ casino_ceiling = box(
 def logistic(r, X):
     return r*X*(1-X)
     
-seed = 0.4
-r = 3.9
+seed = random.uniform(0, 1.0)
+r = 4
 
-lower_bound = 0.3
-upper_bound = 0.7
+lower_bound = 0.4
+upper_bound = 0.6
 
 X = [seed]
 
 
 def rng():
-    global nums
-
-    #print("roll " + str(i))
+    global X
+    
     res = logistic(r, X[-1])
+    if(res < upper_bound and res > lower_bound):
+        X.append(logistic(r, X[-1]))
     while(res < lower_bound or res > upper_bound):
-        #print(res)
         X.append(logistic(r, X[-1]))
         res = X[-1]
-        
-    n = (upper_bound - lower_bound ) / 37
-    interval = (res - lower_bound) / n
-    #print(interval - (interval % 1))
-    interval = int(interval  - (interval  % 1 ) - 1)
-    #print(nums[0])
-    #print(interval)
-    print(nums[interval])
-    #print(nums[interval  - (interval  % 1 ) - 1])
+    n = (res - lower_bound) / (upper_bound - lower_bound) * 38
 
-for i in range(50):
-    rng()
+    return n - n % 1
 
+def frequency(n):
+    freq_graph = graph(title = f'Number of Slot Lands with {n} Rolls', xtitle = "Slot #", ytitle = "Number of Lands")
+    freq_bars = gvbars(delta=0.5)
     
-# Spin animation
-#t = 0
-#while True:
-#    rate(30)
-#    t += 0.05
-#    wheel.rotate(angle=0.03, axis=vec(0, 1, 0), origin=vec(0, 0, 0))
+    ignore = 0
+    
+    freq = {}
+    for i in range(n):
+        rand = rng()
+        
+        if(ignore >= 500):
+            if(rand not in freq):
+                freq[rand] = 1
+            else:
+                freq[rand] += 1
+        ignore += 1
+            
+    for key in freq:
+        freq_bars.plot(key, freq[key])
+
+def distribution(n, b):
+    bell_graph = graph(title = f'Distribution of Averaged Slot Rolls (Batch Size: {b})', xtitle = "Average Slot #", ytitle = "Frequency")
+    bell_bars = gvbars(delta=0.5)
+    
+    freq = {i * 0.5: 0 for i in range(0, int(37 / 0.5))}
+    
+    for i in range(n):
+        sum = 0
+        for j in range(b):
+            sum += rng()
+            
+        mean = sum / b
+        mean = int(mean * 2) / 2.0
+        
+        
+        if(mean not in freq):
+            freq[mean] = 1
+        else:
+            freq[mean] += 1
+                
+    for key in freq:
+        bell_bars.plot(key, freq[key] / n)
+
+def simulate_and_stats(n):
+    values = []
+    for i in range(n):
+        values.append(rng())
+    
+    mean = sum(values) / n
+    
+    variance = sum((x - mean) ** 2 for x in values) / n
+    std_dev = sqrt(variance)
+    
+    print(f"Mean: {mean}")
+    print(f"Standard Deviation: {std_dev}")
+    
+    return mean, std_dev
+
+frequency(10000)
+simulate_and_stats(10000)
+distribution(10000, 30)
+        
 
 dt = 0.01
 def spin():
@@ -201,15 +248,3 @@ def spin():
         scene.center = vec(0, 0, 0)
         scene.forward = norm(vec(0, 0, 0) - vec(cam_x, cam_y, cam_z))
         scene.up = vec(0, 1, 0)
-
-
-
-
-
-
-        
-
-#spin()
-
-
-#print(X)
