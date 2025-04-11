@@ -88,8 +88,9 @@ scene.append_to_caption("\nHow many spins? ")
 spin_input = winput(bind=None, prompt="Put number of spins and Enter")
 scene.append_to_caption("\n")
 skip_button = button(text="Finish Animations Normally", bind=toggle_skip)
-scene.append_to_caption("\t")
+scene.append_to_caption("\t             ")
 finish_button = button(text="Finish It Already", bind=finish_instant)
+scene.append_to_caption("\nRestart to do another simulation")
 
 # Wait until user enters a value
 while spin_input.text == "":
