@@ -1,42 +1,120 @@
 Web VPython 3.2
-
-
+import random
 scene.background = vec(0.3, 0.02, 0.02)
 scene.forward = vec(0, -1, 0.2) # bird's eye view
 scene.up = vec(0, 0, 1)
 
 
 
+def wait(seconds):
+    t = 0
+    dt = 0.01
+    while t < seconds:
+        rate(1 / dt)
+        t += dt
 
-# randomization
 def logistic(r, X):
-    return r * X * (1 - X)
-
-seed = 0.71
+    return r*X*(1-X)
+    
+    
+def isnan(x):
+    return x != x
+    
+seed = random.uniform(0, 1.0)
 r = 4
 
-lower_bound = 0.3
-upper_bound = 0.7
+lower_bound = 0.4
+upper_bound = 0.6
 
 X = [seed]
 
 def rng():
-    res = seed
-    while(res == seed or lower_bound < 0.3 or upper_bound > 0.7):
-        X.append(logistic(r, X[-1]))
-        res = X[-1]
+    global X, r
+
+    if not isinstance(X, list) or len(X) == 0:
+        X = [random.uniform(0, 1.0)]
+
+    res = logistic(r, X[-1])
+
+    if not (0 <= res <= 1) or isnan(res):
+        # Re-seed 
+        res = random.uniform(lower_bound, upper_bound)
+        X.append(res)
+    elif lower_bound < res < upper_bound:
+        X.append(res)
+
+    tries = 0
+    max_tries = 100
+    while (res < lower_bound or res > upper_bound) and tries < max_tries:
+        res = logistic(r, X[-1])
+        if not (0 <= res <= 1) or isnan(res):
+            res = random.uniform(lower_bound, upper_bound)
+        X.append(res)
+        tries += 1
+
+    n = (res - lower_bound) / (upper_bound - lower_bound) * 38
+    return int(max(0, min(37, n)))  # clamp result between 0 and 37
+
+
+
+def frequency(n):
+    freq_graph = graph(title = f'Number of Slot Lands with {n} Rolls', xtitle = "Slot #", ytitle = "Number of Lands")
+    freq_bars = gvbars(delta=0.5)
     
-    n = (upper_bound - lower_bound ) / 38
-    interval = (res - lower_bound) / n
-    print( interval  - interval  % 1 )
+    ignore = 0
+    
+    freq = {}
+    for i in range(n):
+        rand = rng()
+        
+        if(ignore >= 500):
+            if(rand not in freq):
+                freq[rand] = 1
+            else:
+                freq[rand] += 1
+        ignore += 1
+            
+    for key in freq:
+        freq_bars.plot(key, freq[key])
 
+def distribution(n, b):
+    bell_graph = graph(title = f'Distribution of Averaged Slot Rolls (Batch Size: {b})', xtitle = "Average Slot #", ytitle = "Frequency")
+    bell_bars = gvbars(delta=0.5)
+    
+    freq = {i * 0.5: 0 for i in range(0, int(37 / 0.5))}
+    
+    for i in range(n):
+        sum = 0
+        for j in range(b):
+            sum += rng()
+            spin()
+            
+        mean = sum / b
+        mean = int(mean * 2) / 2.0
+        
+        
+        if(mean not in freq):
+            freq[mean] = 1
+        else:
+            freq[mean] += 1
+                
+    for key in freq:
+        bell_bars.plot(key, freq[key] / n)
 
-
-
-
-
-
-
+def simulate_and_stats(n):
+    values = []
+    for i in range(n):
+        values.append(rng())
+    
+    mean = sum(values) / n
+    
+    variance = sum((x - mean) ** 2 for x in values) / n
+    std_dev = sqrt(variance)
+    
+    print(f"Mean: {mean}")
+    print(f"Standard Deviation: {std_dev}")
+    
+    return mean, std_dev
 
 
 
@@ -91,7 +169,6 @@ for i in range(38):
     axis= -vec(8*cos(mid),-15,8*sin(mid)),
     up=vec(label.pos.z,0,-label.pos.x),
     color=vec(80/255,49/255,29/255))
-    
     labels.append(bowl)
 
 #text labels
@@ -158,7 +235,7 @@ ball = sphere(
     radius=0.1,
     color=color.white,
     make_trail=True,
-    retain=2
+    retain=5
 )
 
 
@@ -200,39 +277,8 @@ casino_ceiling = box(
 )
 
 
-def logistic(r, X):
-    return r*X*(1-X)
-    
-seed = 0.4
-r = 3.9
-
-lower_bound = 0.3
-upper_bound = 0.7
-
-X = [seed]
 
 
-def rng():
-    global nums
-
-    #print("roll " + str(i))
-    res = logistic(r, X[-1])
-    while(res < lower_bound or res > upper_bound):
-        #print(res)
-        X.append(logistic(r, X[-1]))
-        res = X[-1]
-        
-    n = (upper_bound - lower_bound ) / 37
-    interval = (res - lower_bound) / n
-    #print(interval - (interval % 1))
-    interval = int(interval  - (interval  % 1 ) - 1)
-    #print(nums[0])
-    #print(interval)
-    print(nums[interval])
-    #print(nums[interval  - (interval  % 1 ) - 1])
-
-for i in range(50):
-    rng()
 
     
 # Spin animation
@@ -242,73 +288,113 @@ for i in range(50):
 #    t += 0.05
 #    wheel.rotate(angle=0.03, axis=vec(0, 1, 0), origin=vec(0, 0, 0))
 
+# Time Setup
+
 dt = 0.01
 
-def smoothstep(x):
+# Easing Math
+
+def ease_in_out(x):
     return x * x * (3 - 2 * x)
 
-def spin():
-    t = 0
-    total_time = 6
-    spin_speed = 0.015
+# Pick Result
 
-    ball_angle = 0
-    ball_speed = 0.12
-    ball_radius = 4.3
+def get_result_angle():
+    idx = rng()
+    ang = idx * (2 * pi / 38) + (pi / 38)
+    return idx, ang
+
+# Camera Stuff
+
+def camera_position(progress, cam_ang, cont, ball_pos):
+    r_start = 13
+    r_end = 4.7
+    y_start = 4.5
+    y_end = 0.6
+    r = r_start * (1 - cont) + r_end * cont
+    y = y_start * (1 - cont) + y_end * cont + 0.4 * sin(3 * pi * progress)
+    x = r * cos(cam_ang)
+    z = r * sin(cam_ang)
+    return vec(x, y, z)
+
+# Spin Logic
+
+def spin():
+    # Setup
+    t = 0
+    max_time = 6
+    wheel_vel = 0.015
+
+    # Ball Info
+    ang = 0
+    vel = 0.12
+    ball_r = 4.3
     ball_y = 0.05
 
-    result_index = int(random() * 38)
-    result_angle = result_index * (2 * pi / 38) + (pi / 38)
-    print("Winning index:", result_index, "| Number:", nums[result_index], "| Angle:", result_angle)
+    # Get Target
+    idx, final_ang = get_result_angle()
 
-    total_spin_angle = 0
-    lock_start_angle = None
+    # Wheel Spin
+    total_rot = 0
+    easing = False
+    ease_time = 0
+    ease_dur = max_time * 0.4
+    ease_vel = 0
+    ease_acc = 0
 
-    # Fixed camera for testing
-    cam_distance = 13
-    cam_height = 3
-    cam_angle = pi / 4
-    cam_x = cam_distance * cos(cam_angle)
-    cam_z = cam_distance * sin(cam_angle)
-    scene.center = vec(0, 0, 0)
-    scene.forward = norm(vec(0, 0, 0) - vec(cam_x, cam_height, cam_z))
-    scene.up = vec(0, 1, 0)
-    scene.range = 6
-
-    while t < total_time:
+    while t < max_time:
         rate(1 / dt)
         t += dt
-        progress = min(1, t / total_time)
+        prog = t / max_time
 
-        ease_start = 0.8
-        ease_factor = (progress - ease_start) / (1 - ease_start)
-        ease = smoothstep(ease_factor) if progress > ease_start else 0
+        # Spin Wheel
+        total_rot += wheel_vel
+        wheel.rotate(angle=wheel_vel, axis=vec(0, 1, 0), origin=vec(0, 0, 0))
 
-        # Rotate wheel
-        spin_angle = spin_speed
-        total_spin_angle += spin_angle
-        wheel.rotate(angle=spin_angle, axis=vec(0, 1, 0), origin=vec(0, 0, 0))
+        # Ease Setup
+        if not easing and prog >= 0.6:
+            easing = True
+            ease_time = 0
+            curr = ang % (2 * pi)
+            tgt = final_ang % (2 * pi)
+            if tgt < curr:
+                tgt += 2 * pi
+            diff = tgt - curr
+            ease_vel = vel
+            ease_acc = 2 * (diff - ease_vel * ease_dur) / (ease_dur ** 2)
 
-        # Ball spin
-        if ease == 0:
-            ball_speed *= 0.992
-            ball_angle += ball_speed
+        # Ball Spin
+        if not easing:
+            vel *= 0.992
+            ang += vel
         else:
-            if lock_start_angle is None:
-                lock_start_angle = ball_angle
-            ball_angle = (1 - ease) * lock_start_angle + ease * (result_angle)
+            ang += ease_vel * dt + 0.5 * ease_acc * dt * dt
+            ease_vel += ease_acc * dt
+            ease_time += dt
 
-        ball.pos = vec(ball_radius * cos(ball_angle), ball_y, ball_radius * sin(ball_angle))
-        
-        # Lock final
-    wheel.rotate(angle=-total_spin_angle, axis=vec(0, 1, 0), origin=vec(0, 0, 0))
-    ball.pos = vec(ball_radius * cos(-result_angle), ball_y, ball_radius * sin(-result_angle))
+        ball.pos = vec(ball_r * cos(ang), ball_y, ball_r * sin(ang))
 
-    print("Ball landed cleanly in:", nums[result_index])
+        # Camera Move
+        cont = min(1, max(0, (prog - 0.6) / 0.4))
+        cam_ang = (1 - cont) * (2 * pi * prog) + cont * ang
+        cam_pos = camera_position(prog, cam_ang, cont, ball.pos)
+
+        focus = vec(0, 0, 0) * (1 - cont) + ball.pos * cont * 0.6
+        scene.center = focus + vec(0, 0.5 * cont, 0)
+        scene.forward = norm(focus - cam_pos + vec(0, -0.9 * cont, 0))
+        scene.up = vec(0, 1, 0)
+        scene.range = 6 - 2.2 * cont
+
+    # End State
+    wheel.rotate(angle=-total_rot, axis=vec(0, 1, 0), origin=vec(0, 0, 0))
+    ball.pos = vec(ball_r * cos(final_ang), ball_y, ball_r * sin(final_ang))
+    wait(1)
 
 #spin()
 
-
+frequency(10000)
+simulate_and_stats(10000)
+distribution(10000, 30)
 #print(X)
     
 
