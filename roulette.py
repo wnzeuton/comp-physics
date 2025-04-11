@@ -58,7 +58,7 @@ def rng():
 
 
 def frequency(n):
-    freq_graph = graph(title = f'Number of Slot Lands with {n} Rolls', xtitle = "Slot #", ytitle = "Number of Lands")
+    freq_graph = graph(title = f'Number of Slot Lands with {n-500} Rolls', xtitle = "Slot #", ytitle = "Number of Lands")
     freq_bars = gvbars(delta=0.5)
     
     ignore = 0
@@ -78,28 +78,27 @@ def frequency(n):
         freq_bars.plot(key, freq[key])
 
 def distribution(n, b):
-    bell_graph = graph(title = f'Distribution of Averaged Slot Rolls (Batch Size: {b})', xtitle = "Average Slot #", ytitle = "Frequency")
-    bell_bars = gvbars(delta=0.5)
-    
-    freq = {i * 0.5: 0 for i in range(0, int(37 / 0.5))}
-    
-    for i in range(n):
-        sum = 0
-        for j in range(b):
-            sum += rng()
-            spin()
-            
-        mean = sum / b
-        mean = int(mean * 2) / 2.0
-        
-        
-        if(mean not in freq):
-            freq[mean] = 1
-        else:
-            freq[mean] += 1
-                
-    for key in freq:
-        bell_bars.plot(key, freq[key] / n)
+     bell_graph = graph(title = f'Distribution of Averaged Slot Rolls (Batch Size: {b})', xtitle = "Average Slot #", ytitle = "Frequency")
+     bell_bars = gvbars(delta=0.5)
+     
+     freq = {i * 0.5: 0 for i in range(0, int(37 / 0.5))}
+     
+     for i in range(n):
+         sum = 0
+         for j in range(b):
+             sum += rng()
+             
+         mean = sum / b
+         mean = int(mean * 2) / 2.0
+         
+         
+         if(mean not in freq):
+             freq[mean] = 1
+         else:
+             freq[mean] += 1
+                 
+     for key in freq:
+         bell_bars.plot(key, freq[key] / n)
 
 def simulate_and_stats(n):
     values = []
@@ -320,6 +319,7 @@ def camera_position(progress, cam_ang, cont, ball_pos):
 # Spin Logic
 
 def spin():
+    global should_stop
     # Setup
     t = 0
     max_time = 6
@@ -343,6 +343,8 @@ def spin():
     ease_acc = 0
 
     while t < max_time:
+        if should_stop:
+            return
         rate(1 / dt)
         t += dt
         prog = t / max_time
@@ -392,9 +394,37 @@ def spin():
 
 #spin()
 
-frequency(10000)
-simulate_and_stats(10000)
-distribution(10000, 30)
+#frequency(10000)
+#simulate_and_stats(10000)
+#distribution(10000, 30)
+
+should_stop = False
+
+scene.append_to_caption("\n")
+button(text='Cancel Animation', bind=stop_animation)
+
+def stop_animation():
+    global should_stop
+    should_stop = True
+
+while True:
+    n = input("Input number of iterates (>999): ")
+    try:
+        n = int(n)
+        if n > 999:
+            break
+        else:
+            print("Please enter a number greater than 999.")
+    except ValueError:
+        print("That's not a valid number. Please try again.")
+
+for i in range(n):
+    spin()
+    
+frequency(n + 500)
+simulate_and_stats(n)
+distribution(n, 10)
+
+
 #print(X)
     
-
