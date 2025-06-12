@@ -3,6 +3,9 @@ Web VPython 3.2
 import random
 
 scene = canvas(background=vec(.8, .9, 1))
+scene.userzoom = True
+scene.userspin = False
+scene.userpan = False
 
 collisioncount = 0
 volume = 1000
@@ -21,7 +24,7 @@ piston = cylinder(pos = vec(0, -1.5*r, 0), axis = vec(0, 2.5*r, 0), radius = r, 
 
 volSlider = slider(bind = setVolume, min = 1000, max = 200000, value = volume, step = 1, length = 300, width = 13, left = 35, top = 10, bottom = 10)
 scene.append_to_caption("\n")
-heatSlider = slider(bind = setHeat, min = 0.1, max = 3, value = 2, step = 0.05, length = 300, width = 13, left = 35, top = 10, bottom = 10)
+heatSlider = slider(bind = setHeat, min = 0.001, max = 6, value = 2, step = 0.05, length = 300, width = 13, left = 35, top = 10, bottom = 10)
 
 def findr(v):
     return pow((v / (2*pi)), (1/3))
@@ -42,6 +45,9 @@ def setVolume():
 #        object.pos *= (volume / oldVolume) ** 1/3
         object.pos *= pow((volume / oldVolume), 1/3)
     updPiston(r)
+    gauge.pos *= pow((volume / oldVolume), 1/3)
+    gauge.size *= pow((volume / oldVolume), 1/3)
+    lab.pos.x = -r
     
 def setHeat():
     global heat
@@ -61,7 +67,8 @@ def spawn_particle():
     
     for i in range(spawn_quantity):
         particle = sphere(pos = vec(0,0,0))
-        speed = random.uniform(heat - 0.5, heat + 0.5)
+        max_diff = min(heat, 0.5)
+        speed = random.uniform(heat - max_diff, heat + max_diff)
         particle.vel = vector.random() / 5 * speed
         particle.mass = 1
         particle.color = color.blue
@@ -165,21 +172,31 @@ def clear():
     collisioncount = 0
 
 
-gauge = None
-def draw_gauge():
+gauge = []
+needle = None
+def draw_gauge(init_pos):
     global gauge
-    gauge = cylinder(pos=vec(10,-2,0), axis=vec(1,0,0), length = 3, radius = 0.1, color = color.red)
+    global needle
+    
+    backing = cylinder(pos = init_pos + vec(0,0,0), axis=vec(0,0,1), length = 0.05, radius = 4, emissive = True)
+    needle = cylinder(pos=init_pos, axis=vec(-1,0,0), length = 3, radius = 0.1, color = color.red, emissive = True)
+    
+    gauge = compound([backing, needle], pos=init_pos)
+    
+    
 
-draw_gauge()    
+draw_gauge(vec(10,0,0))    
 
-pressure = None
 
+
+pressure = 0
+lab = label(pos=vec(-piston.radius, 0, 0), text=pressure, xoffset=-60, yoffset=50, space=0, height=16, border=4, font='sans', background = vec(0,0,0))
 
 timer = 0
 dt = 0.01
-raw_pressure_interval = 0.05
+raw_pressure_interval = 0.01
 smoothed_pressure = None
-alpha = 0.1
+alpha = 0.05
 while True:
     rate(1/dt)
     global pressure
@@ -196,8 +213,10 @@ while True:
             smoothed_pressure = raw_pressure
         smoothed_pressure = alpha * raw_pressure + (1 - alpha) * smoothed_pressure
         collisioncount = 0
+        
+        lab.text = smoothed_pressure
     
     print(smoothed_pressure)
     if(smoothed_pressure):
-        gauge.axis.x = cos( smoothed_pressure / 2.5 * pi ) * -3
-        gauge.axis.y = sin( smoothed_pressure / 2.5 * pi ) * 3
+        gauge.axis.x = cos( smoothed_pressure / 6 * pi ) * 3
+        gauge.axis.y = sin( smoothed_pressure / 6 * pi ) * -3
