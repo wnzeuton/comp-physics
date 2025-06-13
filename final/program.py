@@ -1,4 +1,23 @@
-Web VPython 3.2
+ Web VPython 3.2
+
+""" 
+Read Me:
+Our program simulates gas particles moving around within an enclosed cylindrical 
+volume. Counting the number of collisions happening per second, it calculates a
+unitless 'pressure' that is displayed on the gauge. To use our program, select a
+number of particles you want to spawn, click spawn particles, and then watch as
+they bounce around. You can also click clear to despawn all of the balls. You 
+can also dynamically adjust the volume of the cylinder and the temperature, which
+affects the speed of the particles, to see how they impact the behavior of the 
+system. By clicking one of the check boxes next to either the temperature or 
+volume, you can isolate that variable and begin graphing how that variable 
+affects the pressure. Isolating the variables is necessary because if you are 
+trying to plot pressure vs volume or temperature, changing the other will change
+the pressure without changing the variable being graphed. Once isolated, it
+will begin to plot the values onto a graph to demonstrate the ideal gas law. 
+Once you stop isolating the variables and then isolate a variable again, it will
+clear the graphs to prevent the same issue. 
+"""
 
 import random
 
@@ -10,21 +29,24 @@ scene.userpan = False
 collisioncount = 0
 volume = 1000
 heat = 2
-scene.append_to_caption("\n Collision Count = ")
-counter = wtext(text=collisioncount)
+
 scene.append_to_caption("\n Volume = ")
 displayvolume = wtext(text = volume)
 scene.append_to_caption(" meters ^3\n")
+#displayvolume = wtext(text = volume)
+#scene.append_to_caption(" meters ^3\n")
 
-displayvolume.text = volume
+#displayvolume.text = volume
 
 r = findr(volume)
 
 piston = cylinder(pos = vec(0, -1.5*r, 0), axis = vec(0, 2.5*r, 0), radius = r, color=color.white, opacity = 0.4, emmisive = True)
 
-volSlider = slider(bind = setVolume, min = 1000, max = 200000, value = volume, step = 1, length = 300, width = 13, left = 35, top = 10, bottom = 10)
-scene.append_to_caption("\n")
-heatSlider = slider(bind = setHeat, min = 0.001, max = 6, value = 2, step = 0.05, length = 300, width = 13, left = 35, top = 10, bottom = 10)
+volSlider = slider(bind = setVolume, min = 1000, max = 200000, value = volume, step = 1, length = 300, width = 13, left = 5, top = 10, bottom = 10)
+
+scene.append_to_caption("\nHeat\n")
+
+heatSlider = slider(bind = setHeat, min = 0.001, max = 6, value = 2, step = 0.05, length = 300, width = 13, left = 5, top = 10, bottom = 10)
 
 scene.append_to_caption("\n\nIsolation Mode: ")
 def update_isolation_choice():
@@ -57,9 +79,6 @@ def begin_isolation():
         x_axis_label.text = "Variable Value"
         set_ui_enabled(True)
 
-
-
-
 def findr(v):
     return pow((v / (2*pi)), (1/3))
 
@@ -73,7 +92,7 @@ def setVolume():
     global volume
     oldVolume = volume
     volume = volSlider.value
-    displayvolume.text = volume
+#    displayvolume.text = volume
     r = findr(volume)
     for object in objects:
 #        object.pos *= (volume / oldVolume) ** 1/3
@@ -110,6 +129,7 @@ def spawn_particle():
         particle.radius = 0.2
         
         objects.append(particle)
+        particle_count.text = len(objects)
     
 spawn_quantity = 1
 
@@ -118,7 +138,9 @@ def set_spawn_quantity():
     
     spawn_quantity = int(set_spawn_menu.selected)
     
-scene.append_to_caption('\n\n')
+scene.append_to_caption("\n Particle Count:")
+particle_count = wtext(text = len(objects))
+scene.append_to_caption("\n")
 
 set_spawn_menu = menu(bind=set_spawn_quantity, choices=[1,5,10,15,20])
     
@@ -202,7 +224,7 @@ def clear():
     for object in objects:
         object.visible = False
     objects = []
-    
+    particle_count.text = 0
     collisioncount = 0
 
 
@@ -307,7 +329,8 @@ while True:
     global pressure
     move(objects)
     collision(objects)
-    counter.text = collisioncount
+    
+    
     timer += dt
     
     if(timer > raw_pressure_interval):
@@ -319,13 +342,13 @@ while True:
         smoothed_pressure = alpha * raw_pressure + (1 - alpha) * smoothed_pressure
         collisioncount = 0
         
-        lab.text = smoothed_pressure
+        lab.text = round(smoothed_pressure, 2)
     
-    print(smoothed_pressure)
+#    print(smoothed_pressure)
     if(smoothed_pressure):
         gauge.axis.x = cos( smoothed_pressure / 6 * pi ) * 3
         gauge.axis.y = sin( smoothed_pressure / 6 * pi ) * -3
-        # === Isolation Mode Logic ===
+        
     if isolation_menu.selected != isolation_mode and isolation_menu.selected != "None":
         begin_isolation()
 
@@ -340,10 +363,3 @@ while True:
             isolation_mode = "None"
             isolation_menu.selected = "None"
             set_ui_enabled(True)
-
-        
-        
-        
-        
-        
-        
