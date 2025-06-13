@@ -26,6 +26,40 @@ volSlider = slider(bind = setVolume, min = 1000, max = 200000, value = volume, s
 scene.append_to_caption("\n")
 heatSlider = slider(bind = setHeat, min = 0.001, max = 6, value = 2, step = 0.05, length = 300, width = 13, left = 35, top = 10, bottom = 10)
 
+scene.append_to_caption("\n\nIsolation Mode: ")
+def update_isolation_choice():
+    pass  # dummy function, required by menu bind
+
+isolation_menu = menu(bind=update_isolation_choice, choices=["None", "Isolate Volume", "Isolate Temperature", "Isolate Particles"])
+
+pressure_plot = gcurve(color=color.red)
+x_axis_label = label(pos=vec(8, -5, 0), text="Variable Value", height=12, box=False)
+y_axis_label = label(pos=vec(4, 5, 0), text="Pressure", height=12, box=False, align="center")
+
+
+def begin_isolation():
+    global isolation_mode, isolation_values, isolation_index
+    isolation_mode = isolation_menu.selected
+    isolation_index = 0
+    pressure_plot.delete()
+    set_ui_enabled(False)
+    
+    if isolation_mode == "Isolate Volume":
+        isolation_values = list(range(1000, 10001, 250))
+        x_axis_label.text = "Volume (m^3)"
+    elif isolation_mode == "Isolate Temperature":
+        isolation_values = [round(x * 0.1, 1) for x in range(5, 51, 2)]
+        x_axis_label.text = "Temperature (T)"
+    elif isolation_mode == "Isolate Particles":
+        isolation_values = list(range(1, 51, 2))
+        x_axis_label.text = "Particle Count"
+    else:
+        x_axis_label.text = "Variable Value"
+        set_ui_enabled(True)
+
+
+
+
 def findr(v):
     return pow((v / (2*pi)), (1/3))
 
@@ -192,6 +226,77 @@ draw_gauge(vec(10,0,0))
 pressure = 0
 lab = label(pos=vec(-piston.radius, 0, 0), text=pressure, xoffset=-60, yoffset=50, space=0, height=16, border=4, font='sans', background = vec(0,0,0))
 
+isolation_mode = "None"
+isolation_index = 0
+isolation_values = []
+def set_ui_enabled(state):
+    volSlider.disabled = not state
+    heatSlider.disabled = not state
+    spawn.disabled = not state
+    clear.disabled = not state
+    set_spawn_menu.disabled = not state
+def begin_isolation():
+    global isolation_mode, isolation_values, isolation_index
+    isolation_mode = isolation_menu.selected
+    isolation_index = 0
+    pressure_plot.delete()
+    set_ui_enabled(False)
+    
+    if isolation_mode == "Isolate Volume":
+        isolation_values = list(range(1000, 10001, 250))
+    elif isolation_mode == "Isolate Temperature":
+        isolation_values = [round(x * 0.1, 1) for x in range(5, 51, 2)]
+    elif isolation_mode == "Isolate Particles":
+        isolation_values = list(range(1, 51, 2))
+    else:
+        set_ui_enabled(True)
+def apply_isolation_step():
+    global volume, heat, spawn_quantity
+    value = isolation_values[isolation_index]
+    
+    if isolation_mode == "Isolate Volume":
+        old_volume = volume
+        volume = value
+        volSlider.value = value
+        r = findr(volume)
+        updPiston(r)
+        for o in objects:
+            o.pos *= pow((volume / old_volume), 1/3)
+        gauge.pos *= pow((volume / old_volume), 1/3)
+        gauge.size *= pow((volume / old_volume), 1/3)
+        lab.pos.x = -r
+        displayvolume.text = volume
+        
+    elif isolation_mode == "Isolate Temperature":
+        for obj in objects:
+            obj.vel *= value / heat
+        heatSlider.value = value
+        heat = value
+        
+    elif isolation_mode == "Isolate Particles":
+        clear()
+        spawn_quantity = value
+        spawn_particle()
+
+def wait_for_pressure_step():
+    global smoothed_pressure, timer, collisioncount
+    timer = 0
+    smoothed_pressure = None
+    t = 0
+    interval = raw_pressure_interval
+    while t < 1.0:
+        rate(1 / dt)
+        move(objects)
+        collision(objects)
+        raw = collisioncount / (interval * volume)
+        if smoothed_pressure is None:
+            smoothed_pressure = raw
+        smoothed_pressure = alpha * raw + (1 - alpha) * smoothed_pressure
+        collisioncount = 0
+        t += interval
+    return smoothed_pressure
+
+
 timer = 0
 dt = 0.01
 raw_pressure_interval = 0.01
@@ -220,3 +325,25 @@ while True:
     if(smoothed_pressure):
         gauge.axis.x = cos( smoothed_pressure / 6 * pi ) * 3
         gauge.axis.y = sin( smoothed_pressure / 6 * pi ) * -3
+        # === Isolation Mode Logic ===
+    if isolation_menu.selected != isolation_mode and isolation_menu.selected != "None":
+        begin_isolation()
+
+    if isolation_mode != "None":
+        if isolation_index < len(isolation_values):
+            apply_isolation_step()
+            pres = wait_for_pressure_step()
+            pressure_plot.plot(isolation_values[isolation_index], pres)
+            isolation_index += 1
+        else:
+            pressure_plot.delete()
+            isolation_mode = "None"
+            isolation_menu.selected = "None"
+            set_ui_enabled(True)
+
+        
+        
+        
+        
+        
+        
