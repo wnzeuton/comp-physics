@@ -16,7 +16,8 @@ trying to plot pressure vs volume or temperature, changing the other will change
 the pressure without changing the variable being graphed. Once isolated, it
 will begin to plot the values onto a graph to demonstrate the ideal gas law. 
 Once you stop isolating the variables and then isolate a variable again, it will
-clear the graphs to prevent the same issue. 
+clear the graphs to prevent the same issue. Keep in mind that the more particles
+you have while graphing, the more accurate your graphs will be.
 """
 
 import random
@@ -59,7 +60,6 @@ pressure_plot = gcurve(color=color.red, graph = data_plot)
 x_axis_label = ""
 
 
-
 def begin_isolation():
     global isolation_mode, isolation_values, isolation_index
     isolation_mode = isolation_menu.selected
@@ -93,7 +93,7 @@ def setVolume():
     global volume
     oldVolume = volume
     volume = volSlider.value
-#    displayvolume.text = volume
+    displayvolume.text = volume
     r = findr(volume)
     for object in objects:
 #        object.pos *= (volume / oldVolume) ** 1/3
@@ -101,7 +101,7 @@ def setVolume():
     updPiston(r)
     gauge.pos *= pow((volume / oldVolume), 1/3)
     gauge.size *= pow((volume / oldVolume), 1/3)
-    lab.pos.x = -r
+    lab.pos *= pow((volume / oldVolume), 1/3)
     
 def setHeat():
     global heat
@@ -218,7 +218,7 @@ def container_collision(obj):
         obj.vel.y *= -1
         collisioncount += 1
 
-def clear_jar():
+def clear():
     global objects
     global collisioncount
     
@@ -227,7 +227,16 @@ def clear_jar():
     objects = []
     particle_count.text = 0
     collisioncount = 0
+    
+def clear_jar():
+    global objects
+    global collisioncount
 
+    for object in objects:
+        object.visible = False
+    objects = []
+    particle_count.text = 0
+    collisioncount = 0
 
 gauge = []
 needle = None
@@ -247,7 +256,7 @@ draw_gauge(vec(10,0,0))
 
 
 pressure = 0
-lab = label(pos=vec(-piston.radius, 0, 0), text=pressure, xoffset=-60, yoffset=50, space=0, height=16, border=4, font='sans', background = vec(0,0,0))
+lab = label(pos=vec(10, 0, 0), text="Pressure: " + pressure, xoffset=20, yoffset=80, space=0, height=16, border=4, font='sans', background = vec(0,0,0), box=False)
 
 isolation_mode = "None"
 isolation_index = 0
@@ -274,10 +283,11 @@ def begin_isolation():
     else:
         set_ui_enabled(True)
 def apply_isolation_step():
-    global volume, heat, spawn_quantity
+    global volume, heat, spawn_quantity, data_plot
     value = isolation_values[isolation_index]
     
     if isolation_mode == "Isolate Volume":
+        data_plot.xtitle = 'Volume'
         old_volume = volume
         volume = value
         volSlider.value = value
@@ -287,16 +297,18 @@ def apply_isolation_step():
             o.pos *= pow((volume / old_volume), 1/3)
         gauge.pos *= pow((volume / old_volume), 1/3)
         gauge.size *= pow((volume / old_volume), 1/3)
-        lab.pos.x = -r
+        lab.pos.x *= pow((volume / old_volume), 1/3)
         displayvolume.text = volume
         
     elif isolation_mode == "Isolate Temperature":
+        data_plot.xtitle = 'Temperature'
         for obj in objects:
             obj.vel *= value / heat
         heatSlider.value = value
         heat = value
         
     elif isolation_mode == "Isolate Particles":
+        data_plot.xtitle = 'Particles'
         clear_jar()
         spawn_quantity = value
         spawn_particle()
@@ -341,9 +353,10 @@ while True:
         if(not smoothed_pressure):
             smoothed_pressure = raw_pressure
         smoothed_pressure = alpha * raw_pressure + (1 - alpha) * smoothed_pressure
+#        smoothed_pressure = 1 / 3 * len(objects) / volume * heat ** 2
         collisioncount = 0
         
-        lab.text = round(smoothed_pressure, 2)
+        lab.text = "Pressure: " + round(smoothed_pressure, 2)
     
 #    print(smoothed_pressure)
     if(smoothed_pressure):
