@@ -54,9 +54,10 @@ def update_isolation_choice():
 
 isolation_menu = menu(bind=update_isolation_choice, choices=["None", "Isolate Volume", "Isolate Temperature", "Isolate Particles"])
 
-pressure_plot = gcurve(color=color.red)
-x_axis_label = label(pos=vec(8, -5, 0), text="Variable Value", height=12, box=False)
-y_axis_label = label(pos=vec(4, 5, 0), text="Pressure", height=12, box=False, align="center")
+data_plot = graph(xtitle = "coolio", ytitle = "Pressure", title = "Isolation Graph")
+pressure_plot = gcurve(color=color.red, graph = data_plot)
+x_axis_label = ""
+
 
 
 def begin_isolation():
@@ -68,15 +69,15 @@ def begin_isolation():
     
     if isolation_mode == "Isolate Volume":
         isolation_values = list(range(1000, 10001, 250))
-        x_axis_label.text = "Volume (m^3)"
+        x_axis_label = "Volume (m^3)"
     elif isolation_mode == "Isolate Temperature":
         isolation_values = [round(x * 0.1, 1) for x in range(5, 51, 2)]
-        x_axis_label.text = "Temperature (T)"
+        x_axis_label = "Temperature (T)"
     elif isolation_mode == "Isolate Particles":
         isolation_values = list(range(1, 51, 2))
-        x_axis_label.text = "Particle Count"
+        x_axis_label = "Particle Count"
     else:
-        x_axis_label.text = "Variable Value"
+        x_axis_label = "No Var"
         set_ui_enabled(True)
 
 def findr(v):
@@ -145,7 +146,7 @@ scene.append_to_caption("\n")
 set_spawn_menu = menu(bind=set_spawn_quantity, choices=[1,5,10,15,20])
     
 spawn = button(bind=spawn_particle, text = "Spawn particle")
-clear = button(bind=clear, text = "Clear")
+clear = button(bind=clear_jar, text = "Clear")
 
 
 def move(objects):
@@ -217,7 +218,7 @@ def container_collision(obj):
         obj.vel.y *= -1
         collisioncount += 1
 
-def clear():
+def clear_jar():
     global objects
     global collisioncount
     
@@ -296,7 +297,7 @@ def apply_isolation_step():
         heat = value
         
     elif isolation_mode == "Isolate Particles":
-        clear()
+        clear_jar()
         spawn_quantity = value
         spawn_particle()
 
@@ -357,6 +358,7 @@ while True:
             apply_isolation_step()
             pres = wait_for_pressure_step()
             pressure_plot.plot(isolation_values[isolation_index], pres)
+            data_plot.xtitle = x_axis_label
             isolation_index += 1
         else:
             pressure_plot.delete()
