@@ -27,6 +27,7 @@ scene.userzoom = True
 scene.userspin = False
 scene.userpan = False
 
+
 collisioncount = 0
 volume = 1000
 heat = 2
@@ -51,7 +52,13 @@ heatSlider = slider(bind = setHeat, min = 0.001, max = 6, value = 2, step = 0.05
 
 scene.append_to_caption("\n\nIsolation Mode: ")
 def update_isolation_choice():
-    pass  # dummy function, required by menu bind
+    global isolation_mode
+    selected = isolation_menu.selected
+    if selected == "None":
+        pressure_plot.delete()
+        data_plot.xtitle = "No Var"
+        isolation_mode = "None"
+        set_ui_enabled(True)
 
 isolation_menu = menu(bind=update_isolation_choice, choices=["None", "Isolate Volume", "Isolate Temperature", "Isolate Particles"])
 
@@ -71,13 +78,15 @@ def begin_isolation():
         isolation_values = list(range(1000, 10001, 250))
         x_axis_label = "Volume (m^3)"
     elif isolation_mode == "Isolate Temperature":
-        isolation_values = [round(x * 0.1, 1) for x in range(5, 51, 2)]
+        isolation_values = [round(x * 0.1, 1) for x in range(0, 61, 2)]
         x_axis_label = "Temperature (T)"
     elif isolation_mode == "Isolate Particles":
-        isolation_values = list(range(1, 51, 2))
+        isolation_values = list(range(0, 201, 10))
         x_axis_label = "Particle Count"
     else:
+        pressure_plot.delete()
         x_axis_label = "No Var"
+        
         set_ui_enabled(True)
 
 def findr(v):
@@ -102,6 +111,9 @@ def setVolume():
     gauge.pos *= pow((volume / oldVolume), 1/3)
     gauge.size *= pow((volume / oldVolume), 1/3)
     lab.pos *= pow((volume / oldVolume), 1/3)
+    scene.center = vec(0, 0, 0)
+    scene.range = findr(volume) * 2.5
+
     
 def setHeat():
     global heat
@@ -248,6 +260,9 @@ def draw_gauge(init_pos):
     needle = cylinder(pos=init_pos, axis=vec(-1,0,0), length = 3, radius = 0.1, color = color.red, emissive = True)
     
     gauge = compound([backing, needle], pos=init_pos)
+    scene.center = vec(0, 0, 0)  # Center of the simulation
+    scene.range = findr(volume) * 2.5  # Zoom level to fit the cylinder
+
     
     
 
@@ -277,9 +292,9 @@ def begin_isolation():
     if isolation_mode == "Isolate Volume":
         isolation_values = list(range(1000, 10001, 250))
     elif isolation_mode == "Isolate Temperature":
-        isolation_values = [round(x * 0.1, 1) for x in range(5, 51, 2)]
+        isolation_values = [round(x * 0.1, 1) for x in range(5, 61, 2)]
     elif isolation_mode == "Isolate Particles":
-        isolation_values = list(range(1, 51, 2))
+        isolation_values = list(range(1, 200, 10))
     else:
         set_ui_enabled(True)
 def apply_isolation_step():
@@ -332,6 +347,15 @@ def wait_for_pressure_step():
     return smoothed_pressure
 
 
+for i in range(-1000, 1001, 10):
+    # Z-direction lines
+    curve(pos=[vec(i, -20, -1000), vec(i, -20, 1000)], color=color.gray(0.7))
+    # X-direction lines
+    curve(pos=[vec(-1000, -20, i), vec(1000, -20, i)], color=color.gray(0.7))
+
+
+
+
 timer = 0
 dt = 0.01
 raw_pressure_interval = 0.01
@@ -373,8 +397,3 @@ while True:
             pressure_plot.plot(isolation_values[isolation_index], pres)
             data_plot.xtitle = x_axis_label
             isolation_index += 1
-        else:
-            pressure_plot.delete()
-            isolation_mode = "None"
-            isolation_menu.selected = "None"
-            set_ui_enabled(True)
